@@ -1,50 +1,78 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
+from openai import OpenAI
+import google.generativeai as genai
+from anthropic import Anthropic
 
 def read_url_content(url):
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         return soup.get_text()
     except requests.RequestException as e:
         st.error(f"Error reading {url}: {e}")
         return None
 
-def summarize_text(text, summary_type, language, llm_model, use_advanced_model):
-    # Placeholder function for text summarization
-    # You should replace this with your actual summarization logic
-    summary = ""
-    if summary_type == "Short":
-        summary = text[:100] + "..."
-    elif summary_type == "Medium":
-        summary = text[:200] + "..."
-    else:  # Long
-        summary = text[:300] + "..."
+def validate_api_key(api_key, llm_model):
+    if not api_key:
+        st.error(f"Please enter your {llm_model} API key.")
+        return False
     
-    # Placeholder for translation and LLM processing
-    # In a real application, you would use a translation API and the selected LLM here
-    summary = f"Summary using {llm_model} ({'advanced' if use_advanced_model else 'standard'} model):\n\n"
-    if language == "English":
-        summary += f"English summary: {summary}"
-    elif language == "French":
-        summary += f"Résumé en français: {summary}"
-    elif language == "Spanish":
-        summary += f"Resumen en español: {summary}"
-    else:
-        summary += f"Summary in {language}: {summary}"
+    try:
+        if llm_model == "OpenAI":
+            client = OpenAI(api_key=api_key)
+            client.models.list()
+        elif llm_model == "Claude":
+            client = Anthropic(api_key=api_key)
+            client.completions.create(
+                model="claude-2.1",
+                max_tokens_to_sample=10,
+                prompt="Hello, World!"
+            )
+        elif llm_model == "Gemini":
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-pro')
+            model.generate_content("Hello, World!")
+        
+        st.success(f"{llm_model} API key is valid!")
+        return True
+    except Exception as e:
+        st.error(f"Invalid {llm_model} API key: {e}")
+        return False
+
+def summarize_text(text, summary_type, language, llm_model, api_key):
+    prompt = f"Summarize the following text in a {summary_type.lower()} format and translate to {language}:\n\n{text}"
+    
+    if llm_model == "OpenAI":
+        client = OpenAI(api_key="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")
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        summary = response.choices[0].message.content
+    elif llm_model == "Claude":
+        client = Anthropic(api_key="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")
+        response = client.completions.create(
+            model="claude-2.1",
+            max_tokens_to_sample=300,
+            prompt=f"Human: {prompt}\n\nAssistant:"
+        )
+        summary = response.completion
+    elif llm_model == "Gemini":
+        genai.configure(api_key="AIzaSyAASJvOggKErjSCLoJHNUBaTvN1qx0E6qA")
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        summary = response.text
     
     return summary
 
 st.set_page_config(page_title="URL Content Summarizer")
-
 st.title("URL Content Summarizer")
 
-# URL input at the top of the screen
 url = st.text_input("Enter a URL:")
 
-# Sidebar options
 with st.sidebar:
     st.header("Settings")
     summary_type = st.selectbox(
@@ -62,15 +90,20 @@ with st.sidebar:
         ("OpenAI", "Claude", "Gemini")
     )
     
-    use_advanced_model = st.checkbox("Use advanced model", value=False)
+    api_key = st.text_input(f"{llm_model} API Key", type="password")
+    
+    if st.button("Validate API Key"):
+        st.session_state.api_key_valid = validate_api_key(api_key, llm_model)
 
-if url:
+if url and st.session_state.get('api_key_valid', False):
     content = read_url_content(url)
     if content:
-        summary = summarize_text(content, summary_type, output_language, llm_model, use_advanced_model)
+        summary = summarize_text(content, summary_type, output_language, llm_model, api_key)
         st.subheader("Summary:")
         st.write(summary)
     else:
         st.warning("Unable to retrieve content from the URL.")
+elif url:
+    st.warning("Please enter and validate your API key before summarizing content.")
 else:
     st.info("Please enter a URL to summarize its content.")
