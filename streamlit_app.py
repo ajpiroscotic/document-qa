@@ -46,14 +46,14 @@ def summarize_text(text, summary_type, language, llm_model, api_key):
     prompt = f"Summarize the following text in a {summary_type.lower()} format and translate to {language}:\n\n{text}"
     
     if llm_model == "OpenAI":
-        client = OpenAI(api_key="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")
+        client = OpenAI(api_key="open_ai_key")
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
         summary = response.choices[0].message.content
     elif llm_model == "Claude":
-        client = Anthropic(api_key="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")
+        client = Anthropic(api_key="claude_key")
         response = client.completions.create(
             model="claude-2.1",
             max_tokens_to_sample=300,
