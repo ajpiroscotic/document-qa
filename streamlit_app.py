@@ -61,7 +61,7 @@ def summarize_text(text, summary_type, language, llm_model, api_key):
         )
         summary = response.completion
     elif llm_model == "Gemini":
-        genai.configure(api_key="AIzaSyAASJvOggKErjSCLoJHNUBaTvN1qx0E6qA")
+        genai.configure(api_key="gemini_key")
         model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         summary = response.text
