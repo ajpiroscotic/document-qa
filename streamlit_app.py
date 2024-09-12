@@ -28,13 +28,12 @@ def validate_api_key(api_key, llm_model):
             client = Anthropic(api_key=api_key)
             client.completions.create(
                 model="claude-2.1",
-                max_tokens_to_sample=10,
-                prompt="Hello, World!"
+                max_tokens_to_sample=10
             )
         elif llm_model == "Gemini":
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-pro')
-            model.generate_content("Hello, World!")
+            
         
         st.success(f"{llm_model} API key is valid!")
         return True
