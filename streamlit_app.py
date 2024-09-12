@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 from openai import OpenAI
-import google.generativeai as genai
-from anthropic import Anthropic
+import google.generativeai as genai # type: ignore
+from anthropic import Anthropic # type: ignore
 
 def read_url_content(url):
     try:
